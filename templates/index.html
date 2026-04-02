@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HomeRadio</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Localhost internet radio router</p>
+          <h1>HomeRadio</h1>
+          <p class="intro">
+            Assign stream URLs to PulseAudio sinks and keep them alive with automatic mpv restarts.
+          </p>
+        </div>
+        <div class="status-grid">
+          <div class="status-card">
+            <span>pactl</span>
+            <strong>{{ 'available' if pactl_available else 'missing' }}</strong>
+          </div>
+          <div class="status-card">
+            <span>mpv</span>
+            <strong>{{ 'available' if mpv_available else 'missing' }}</strong>
+          </div>
+          <div class="status-card">
+            <span>devices</span>
+            <strong>{{ devices|length }}</strong>
+          </div>
+        </div>
+      </section>
+
+      {% if request.args.get('error') %}
+      <div class="banner error">{{ request.args.get('error') }}</div>
+      {% endif %}
+
+      {% if device_error %}
+      <div class="banner warning">{{ device_error }}</div>
+      {% endif %}
+
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>Device FM notes</h2>
+          <span class="muted">One frequency per audio sink</span>
+        </div>
+        {% if devices %}
+        <div class="stream-list">
+          {% for device in devices %}
+          <article class="stream-card">
+            <div class="stream-head">
+              <div>
+                <h3>{{ device.label }}</h3>
+                <p class="muted">{{ device.state or 'state unknown' }}</p>
+              </div>
+              {% if device.fm_frequency %}
+              <span class="pill live">{{ device.fm_frequency }} MHz</span>
+              {% else %}
+              <span class="pill idle">No FM note</span>
+              {% endif %}
+            </div>
+            <form method="post" action="{{ url_for('set_device_frequency') }}" class="stream-form inline-form">
+              <input type="hidden" name="device_name" value="{{ device.name }}">
+              <label>
+                <span>FM frequency note</span>
+                <input
+                  name="fm_frequency"
+                  type="number"
+                  min="87.5"
+                  max="108"
+                  step="0.01"
+                  value="{{ device.fm_frequency }}"
+                  placeholder="99.50"
+                >
+              </label>
+              <button type="submit">Save device note</button>
+            </form>
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty">No audio sinks detected yet.</p>
+        {% endif %}
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>Add or update stream</h2>
+          <a class="ghost-button" href="{{ url_for('index') }}">Refresh page</a>
+        </div>
+        <form method="post" action="{{ url_for('save_stream') }}" class="stream-form">
+          <input type="hidden" name="id" value="">
+          <label>
+            <span>Name</span>
+            <input name="name" type="text" placeholder="Kitchen Radio">
+          </label>
+          <label>
+            <span>Stream URL</span>
+            <input name="url" type="url" placeholder="https://example.com/live.mp3" required>
+          </label>
+          <label>
+            <span>Audio device</span>
+            <select name="device_name" required>
+              <option value="">Select output sink</option>
+              {% for device in devices %}
+              <option value="{{ device.name }}">{{ device.label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="checkbox">
+            <input name="enabled" type="checkbox" checked>
+            <span>Start playing immediately</span>
+          </label>
+          <button type="submit">Save stream</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>Configured streams</h2>
+          <span class="muted">{{ streams|length }} total</span>
+        </div>
+        {% if streams %}
+        <div class="stream-list">
+          {% for stream in streams %}
+          <article class="stream-card">
+            <div class="stream-head">
+              <div>
+                <h3>{{ stream.name }}</h3>
+                <p class="muted">{{ stream.device_name }}</p>
+              </div>
+              <span class="pill {{ 'live' if stream.runtime.running else 'idle' }}">
+                {{ 'running' if stream.runtime.running else 'stopped' }}
+              </span>
+            </div>
+            <p class="url">{{ stream.url }}</p>
+            <div class="meta-row">
+              {% if stream.device_frequency %}
+              <span>Sink FM note: {{ stream.device_frequency }} MHz</span>
+              {% endif %}
+              <span>Restarts: {{ stream.runtime.restart_count }}</span>
+              {% if stream.runtime.last_error %}
+              <span class="error-text">{{ stream.runtime.last_error }}</span>
+              {% endif %}
+            </div>
+            <div class="actions">
+              <form method="post" action="{{ url_for('toggle_stream', stream_id=stream.id) }}">
+                <input type="hidden" name="enabled" value="{{ 'false' if stream.enabled else 'true' }}">
+                <button type="submit">{{ 'Stop' if stream.enabled else 'Start' }}</button>
+              </form>
+              <details>
+                <summary>Edit</summary>
+                <form method="post" action="{{ url_for('save_stream') }}" class="stream-form inline-form">
+                  <input type="hidden" name="id" value="{{ stream.id }}">
+                  <label>
+                    <span>Name</span>
+                    <input name="name" type="text" value="{{ stream.name }}">
+                  </label>
+                  <label>
+                    <span>Stream URL</span>
+                    <input name="url" type="url" value="{{ stream.url }}" required>
+                  </label>
+                  <label>
+                    <span>Audio device</span>
+                    <select name="device_name" required>
+                      {% for device in devices %}
+                      <option value="{{ device.name }}" {% if device.name == stream.device_name %}selected{% endif %}>
+                        {{ device.label }}
+                      </option>
+                      {% endfor %}
+                    </select>
+                  </label>
+                  <label class="checkbox">
+                    <input name="enabled" type="checkbox" {% if stream.enabled %}checked{% endif %}>
+                    <span>Enabled</span>
+                  </label>
+                  <button type="submit">Update stream</button>
+                </form>
+              </details>
+              <form method="post" action="{{ url_for('delete_stream', stream_id=stream.id) }}">
+                <button type="submit" class="danger">Delete</button>
+              </form>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty">No streams configured yet.</p>
+        {% endif %}
+      </section>
+    </main>
+  </body>
+</html>
