@@ -1,10 +1,13 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>HomeRadio</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
   </head>
   <body>
     <main class="page">
@@ -13,7 +16,8 @@
           <p class="eyebrow">Localhost internet radio router</p>
           <h1>HomeRadio</h1>
           <p class="intro">
-            Assign stream URLs to PulseAudio sinks and keep them alive with automatic mpv restarts.
+            Assign stream URLs to PulseAudio sinks and keep them alive with
+            automatic mpv restarts.
           </p>
         </div>
         <div class="status-grid">
@@ -34,9 +38,7 @@
 
       {% if request.args.get('error') %}
       <div class="banner error">{{ request.args.get('error') }}</div>
-      {% endif %}
-
-      {% if device_error %}
+      {% endif %} {% if device_error %}
       <div class="banner warning">{{ device_error }}</div>
       {% endif %}
 
@@ -45,15 +47,24 @@
           <h2>Add or update stream</h2>
           <a class="ghost-button" href="{{ url_for('index') }}">Refresh page</a>
         </div>
-        <form method="post" action="{{ url_for('save_stream') }}" class="stream-form">
-          <input type="hidden" name="id" value="">
+        <form
+          method="post"
+          action="{{ url_for('save_stream') }}"
+          class="stream-form"
+        >
+          <input type="hidden" name="id" value="" />
           <label>
             <span>Name</span>
-            <input name="name" type="text" placeholder="Kitchen Radio">
+            <input name="name" type="text" placeholder="Kitchen Radio" />
           </label>
           <label>
             <span>Stream URL</span>
-            <input name="url" type="url" placeholder="https://example.com/live.mp3" required>
+            <input
+              name="url"
+              type="url"
+              placeholder="https://example.com/live.mp3"
+              required
+            />
           </label>
           <label>
             <span>Audio device</span>
@@ -65,7 +76,7 @@
             </select>
           </label>
           <label class="checkbox">
-            <input name="enabled" type="checkbox" checked>
+            <input name="enabled" type="checkbox" checked />
             <span>Start playing immediately</span>
           </label>
           <button type="submit">Save stream</button>
@@ -86,7 +97,9 @@
                 <h3>{{ stream.name }}</h3>
                 <p class="muted">{{ stream.device_name }}</p>
               </div>
-              <span class="pill {{ 'live' if stream.runtime.running else 'idle' }}">
+              <span
+                class="pill {{ 'live' if stream.runtime.running else 'idle' }}"
+              >
                 {{ 'running' if stream.runtime.running else 'stopped' }}
               </span>
             </div>
@@ -101,40 +114,79 @@
               {% endif %}
             </div>
             <div class="actions">
-              <form method="post" action="{{ url_for('toggle_stream', stream_id=stream.id) }}">
-                <input type="hidden" name="enabled" value="{{ 'false' if stream.enabled else 'true' }}">
-                <button type="submit">{{ 'Stop' if stream.enabled else 'Start' }}</button>
+              <form
+                method="post"
+                action="{{ url_for('toggle_stream', stream_id=stream.id) }}"
+              >
+                <input
+                  type="hidden"
+                  name="enabled"
+                  value="{{ 'false' if stream.enabled else 'true' }}"
+                />
+                <button type="submit">
+                  {{ 'Stop' if stream.enabled else 'Start' }}
+                </button>
               </form>
               <details>
                 <summary>Edit</summary>
-                <form method="post" action="{{ url_for('save_stream') }}" class="stream-form inline-form">
-                  <input type="hidden" name="id" value="{{ stream.id }}">
+                <form
+                  method="post"
+                  action="{{ url_for('save_stream') }}"
+                  class="stream-form inline-form"
+                >
+                  <input type="hidden" name="id" value="{{ stream.id }}" />
                   <label>
                     <span>Name</span>
-                    <input name="name" type="text" value="{{ stream.name }}">
+                    <input name="name" type="text" value="{{ stream.name }}" />
                   </label>
                   <label>
                     <span>Stream URL</span>
-                    <input name="url" type="url" value="{{ stream.url }}" required>
+                    <input
+                      name="url"
+                      type="url"
+                      value="{{ stream.url }}"
+                      required
+                    />
                   </label>
                   <label>
                     <span>Audio device</span>
                     <select name="device_name" required>
                       {% for device in devices %}
-                      <option value="{{ device.name }}" {% if device.name == stream.device_name %}selected{% endif %}>
+                      <option
+                        value="{{ device.name }}"
+                        {%
+                        if
+                        device.name=""
+                        ="stream.device_name"
+                        %}selected{%
+                        endif
+                        %}
+                      >
                         {{ device.label }}
                       </option>
                       {% endfor %}
                     </select>
                   </label>
                   <label class="checkbox">
-                    <input name="enabled" type="checkbox" {% if stream.enabled %}checked{% endif %}>
+                    <input
+                      name="enabled"
+                      type="checkbox"
+                      {%
+                      if
+                      stream.enabled
+                      %}checked{%
+                      endif
+                      %}
+                    />
                     <span>Enabled</span>
                   </label>
                   <button type="submit">Update stream</button>
                 </form>
               </details>
-              <form method="post" action="{{ url_for('delete_stream', stream_id=stream.id) }}">
+              <form
+                method="post"
+                action="{{ url_for('delete_stream', stream_id=stream.id) }}"
+              >
                 <button type="submit" class="danger">Delete</button>
               </form>
             </div>
@@ -169,8 +221,16 @@
                   <span class="pill idle">No FM note</span>
                   {% endif %}
                 </div>
-                <form method="post" action="{{ url_for('set_device_frequency') }}" class="stream-form inline-form">
-                  <input type="hidden" name="device_name" value="{{ device.name }}">
+                <form
+                  method="post"
+                  action="{{ url_for('set_device_frequency') }}"
+                  class="stream-form inline-form"
+                >
+                  <input
+                    type="hidden"
+                    name="device_name"
+                    value="{{ device.name }}"
+                  />
                   <label>
                     <span>FM frequency note</span>
                     <input
@@ -181,7 +241,7 @@
                       step="0.01"
                       value="{{ device.fm_frequency }}"
                       placeholder="99.50"
-                    >
+                    />
                   </label>
                   <button type="submit">Save device note</button>
                 </form>
@@ -209,10 +269,14 @@
                 <p class="url">{{ link.url }}</p>
                 <div class="actions">
                   <form method="post" action="{{ url_for('save_stream') }}">
-                    <input type="hidden" name="name" value="{{ link.name }}">
-                    <input type="hidden" name="url" value="{{ link.url }}">
-                    <input type="hidden" name="device_name" value="{{ link.device_name }}">
-                    <input type="hidden" name="enabled" value="true">
+                    <input type="hidden" name="name" value="{{ link.name }}" />
+                    <input type="hidden" name="url" value="{{ link.url }}" />
+                    <input
+                      type="hidden"
+                      name="device_name"
+                      value="{{ link.device_name }}"
+                    />
+                    <input type="hidden" name="enabled" value="true" />
                     <button type="submit">Play now</button>
                   </form>
                 </div>

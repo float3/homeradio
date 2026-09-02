@@ -3,11 +3,15 @@ from __future__ import annotations
 import json
 import threading
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 
 class ConfigStore:
-    DEFAULT_STATE = {"streams": [], "sink_frequencies": {}, "recent_links": []}
+    DEFAULT_STATE: ClassVar[dict[str, Any]] = {
+        "streams": [],
+        "sink_frequencies": {},
+        "recent_links": [],
+    }
 
     def __init__(self, path: Path) -> None:
         self.path = path

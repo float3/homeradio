@@ -102,7 +102,10 @@ def _wants_json() -> bool:
     if request.is_json:
         return True
     accepted = request.accept_mimetypes
-    return accepted.best == "application/json" and accepted[accepted.best] > accepted["text/html"]
+    return (
+        accepted.best == "application/json"
+        and accepted[accepted.best] > accepted["text/html"]
+    )
 
 
 def _redirect_with_error(message: str):

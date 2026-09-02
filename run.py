@@ -2,7 +2,6 @@ import os
 
 from homeradio.app import create_app
 
-
 app = create_app()
 
 

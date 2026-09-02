@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import time
 import threading
+import time
 import uuid
 from typing import Any
 
@@ -138,7 +138,11 @@ class RadioService:
     def set_enabled(self, stream_id: str, enabled: bool) -> dict[str, Any]:
         with self._lock:
             target = next(
-                (stream for stream in self._state["streams"] if stream["id"] == stream_id),
+                (
+                    stream
+                    for stream in self._state["streams"]
+                    if stream["id"] == stream_id
+                ),
                 None,
             )
             if target is None:
@@ -152,7 +156,9 @@ class RadioService:
 
     def _sync_stream(self, stream: dict[str, Any]) -> None:
         if stream["enabled"]:
-            self.player.ensure_running(stream["id"], stream["url"], stream["device_name"])
+            self.player.ensure_running(
+                stream["id"], stream["url"], stream["device_name"]
+            )
         else:
             self.player.stop(stream["id"])
 
@@ -200,7 +206,9 @@ class RadioService:
                     "enabled": bool(item.get("enabled")),
                 }
             )
-            legacy_frequency = RadioService._parse_fm_frequency(item.get("fm_frequency"))
+            legacy_frequency = RadioService._parse_fm_frequency(
+                item.get("fm_frequency")
+            )
             if legacy_frequency and device_name not in sink_frequencies:
                 sink_frequencies[device_name] = legacy_frequency
 
@@ -241,7 +249,9 @@ class RadioService:
         try:
             frequency = float(text)
         except ValueError as exc:
-            raise ValueError("FM frequency must be a number between 87.5 and 108.0") from exc
+            raise ValueError(
+                "FM frequency must be a number between 87.5 and 108.0"
+            ) from exc
 
         if frequency < 87.5 or frequency > 108.0:
             raise ValueError("FM frequency must be between 87.5 and 108.0")

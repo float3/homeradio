@@ -7,7 +7,6 @@ import threading
 import time
 from dataclasses import dataclass
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -36,9 +35,14 @@ class MPVSupervisor:
     def ensure_running(self, stream_id: str, url: str, device_name: str) -> None:
         with self._lock:
             current = self._streams.get(stream_id)
-            if current and current.url == url and current.device_name == device_name:
-                if current.thread and current.thread.is_alive():
-                    return
+            if (
+                current
+                and current.url == url
+                and current.device_name == device_name
+                and current.thread
+                and current.thread.is_alive()
+            ):
+                return
             self._stop_locked(stream_id)
             stop_event = threading.Event()
             state = StreamProcess(
@@ -92,7 +96,9 @@ class MPVSupervisor:
     def _worker(self, state: StreamProcess) -> None:
         if not mpv_available():
             state.last_error = "mpv is not available on PATH"
-            LOGGER.error("mpv is not available; cannot start stream %s", state.stream_id)
+            LOGGER.error(
+                "mpv is not available; cannot start stream %s", state.stream_id
+            )
             return
 
         while state.stop_event and not state.stop_event.is_set():
@@ -127,4 +133,3 @@ class MPVSupervisor:
             if exit_code != 0:
                 state.last_error = f"mpv exited with code {exit_code}"
             time.sleep(3)
-
