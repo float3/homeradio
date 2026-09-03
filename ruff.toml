@@ -1,2 +1,4 @@
+extend-exclude = ["*.md"]
+
 [lint]
 ignore = ["BLE001"]
