@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import atexit
 import logging
+import os
 from pathlib import Path
 
 from flask import Flask, jsonify, redirect, render_template, request, url_for
@@ -15,7 +16,7 @@ def create_app() -> Flask:
     logging.basicConfig(level=logging.INFO)
 
     root_dir = Path(__file__).resolve().parent.parent
-    data_dir = root_dir / "data"
+    data_dir = Path(os.getenv("HOMERADIO_DATA_DIR") or root_dir / "data")
     store = ConfigStore(data_dir / "config.json")
     player = MPVSupervisor()
     service = RadioService(store, player)
