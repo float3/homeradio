@@ -18,7 +18,33 @@ Localhost web UI for assigning internet radio streams to PulseAudio sinks and pl
 
 ## Run
 
-### Linux target machine
+### NixOS
+
+The flake exports a package and a NixOS module. The service runs in the given
+user's systemd instance so it can reach that user's PipeWire session:
+
+```nix
+{
+  inputs.homeradio = {
+    url = "github:float3/homeradio";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  # in a NixOS configuration
+  imports = [inputs.homeradio.nixosModules.default];
+  services.homeradio = {
+    enable = true;
+    user = "kiosk";
+    openFirewall = true;
+  };
+}
+```
+
+State lives in `~/.local/state/homeradio/config.json` of that user.
+
+To run it once without installing: `nix run github:float3/homeradio`.
+
+### Other Linux
 
 ```bash
 chmod +x setup-and-run.sh
@@ -50,13 +76,13 @@ python run.py
 
 Then open `http://127.0.0.1:5000`.
 
-To change bind address or port:
+To change bind address, port or where state is kept:
 
 ```bash
-HOMERADIO_HOST=0.0.0.0 HOMERADIO_PORT=5000 python run.py
+HOMERADIO_HOST=0.0.0.0 HOMERADIO_PORT=5000 HOMERADIO_DATA_DIR=/var/lib/homeradio python run.py
 ```
 
 ## Notes
 
 - Device routing uses the PulseAudio sink name returned by `pactl list short sinks`.
-- The app stores its config in `data/config.json`.
+- The app stores its config in `data/config.json`, or in `$HOMERADIO_DATA_DIR/config.json` when that is set.
