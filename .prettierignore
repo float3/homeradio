@@ -1,0 +1,3 @@
+# Jinja templates: Prettier reads them as HTML and rejoins {% %} blocks,
+# which broke rendering once.
+templates/
