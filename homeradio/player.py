@@ -108,6 +108,8 @@ class MPVSupervisor:
                 "--really-quiet",
                 "--cache=yes",
                 f"--audio-device=pulse/{state.device_name}",
+                # Everything after "--" is a file or URL, never an option.
+                "--",
                 state.url,
             ]
 

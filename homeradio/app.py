@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import atexit
+import ipaddress
 import logging
 import os
+import socket
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 
@@ -28,6 +31,26 @@ def create_app() -> Flask:
         static_folder=str(root_dir / "static"),
     )
     app.config["SERVICE"] = service
+
+    @app.before_request
+    def reject_foreign_requests():
+        # There is no login: whoever reaches the port may use the radio. What
+        # must not work is a web page elsewhere driving it through a visitor's
+        # browser, by posting a form here or by rebinding its own name to this
+        # address. So the Host has to be one of ours and a POST same-origin.
+        host = urlsplit(f"//{request.host}").hostname or ""
+        if not _is_own_host(host):
+            return jsonify({"error": "Unknown host"}), 403
+        if request.method == "POST":
+            if request.headers.get("Sec-Fetch-Site", "same-origin") not in {
+                "same-origin",
+                "none",
+            }:
+                return jsonify({"error": "Cross-site request"}), 403
+            origin = request.headers.get("Origin")
+            if origin and urlsplit(origin).netloc != request.host:
+                return jsonify({"error": "Cross-site request"}), 403
+        return None
 
     @app.get("/")
     def index():
@@ -91,6 +114,23 @@ def create_app() -> Flask:
 
     atexit.register(player.stop_all)
     return app
+
+
+def _is_own_host(host: str) -> bool:
+    host = host.strip("[]").lower()
+    try:
+        ipaddress.ip_address(host)
+        return True
+    except ValueError:
+        pass
+    own = socket.gethostname().lower()
+    allowed = {"localhost", own, f"{own}.local"}
+    allowed.update(
+        name.strip().lower()
+        for name in os.getenv("HOMERADIO_ALLOWED_HOSTS", "").split(",")
+        if name.strip()
+    )
+    return host in allowed
 
 
 def _get_request_data():

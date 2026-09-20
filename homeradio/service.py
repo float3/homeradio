@@ -4,6 +4,7 @@ import threading
 import time
 import uuid
 from typing import Any
+from urllib.parse import urlsplit
 
 from homeradio.config_store import ConfigStore
 from homeradio.devices import list_audio_devices, pactl_available
@@ -79,8 +80,12 @@ class RadioService:
 
         if not record["url"]:
             raise ValueError("Stream URL is required")
+        if not _is_stream_url(record["url"]):
+            raise ValueError("Stream URL must be an http:// or https:// address")
         if not record["device_name"]:
             raise ValueError("Audio device is required")
+        if not _is_device_name(record["device_name"]):
+            raise ValueError("Audio device name is not valid")
 
         with self._lock:
             streams = self._state["streams"]
@@ -194,7 +199,7 @@ class RadioService:
                 continue
             url = str(item.get("url", "")).strip()
             device_name = str(item.get("device_name", "")).strip()
-            if not url or not device_name:
+            if not _is_stream_url(url) or not _is_device_name(device_name):
                 continue
             streams.append(
                 {
@@ -223,7 +228,7 @@ class RadioService:
                 continue
             url = str(item.get("url", "")).strip()
             device_name = str(item.get("device_name", "")).strip()
-            if not url or not device_name:
+            if not _is_stream_url(url) or not _is_device_name(device_name):
                 continue
             recent_links.append(
                 {
@@ -257,3 +262,20 @@ class RadioService:
             raise ValueError("FM frequency must be between 87.5 and 108.0")
 
         return f"{frequency:.2f}"
+
+
+def _is_stream_url(url: str) -> bool:
+    # The URL is handed to mpv, which would also open local files, playlists
+    # and its own pseudo-protocols; a radio stream is only ever a web address.
+    if any(ch.isspace() or not ch.isprintable() for ch in url):
+        return False
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return False
+    return parts.scheme in {"http", "https"} and bool(parts.hostname)
+
+
+def _is_device_name(name: str) -> bool:
+    # PulseAudio sink names; the value becomes part of an mpv option.
+    return all(ch.isalnum() or ch in "._-:+" for ch in name)
