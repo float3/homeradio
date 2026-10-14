@@ -5,7 +5,7 @@ Localhost web UI for assigning internet radio streams to PulseAudio sinks and pl
 ## features
 
 - enumerates audio output devices with `pactl`
-- maps arbitrary stream URLs (`mp3`, `m3u8`, playlists, etc.) to devices
+- maps arbitrary stream URLs (`mp3`, `m3u8`, playlists, &c.) to devices
 - runs each stream in its own supervised `mpv` process
 - automatically restarts streams when playback exits unexpectedly
 - persists state to JSON and restores enabled streams on next launch
